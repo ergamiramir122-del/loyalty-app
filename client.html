@@ -70,10 +70,9 @@
 
         const qrData = `${cid}:${fio}:${Math.floor(bonuses)}:${spent}:${rank}`;
 
-        // ВОТ ОНО! Генерируем сразу при загрузке страницы, как было в самом начале.
-        // Без if'ов, задержек и прочего мусора.
+        // МАГИЯ ЗДЕСЬ: encodeURIComponent делает текст безопасным для QR кода
         new QRCode(document.getElementById("qrcode"), { 
-            text: qrData, 
+            text: encodeURIComponent(qrData), 
             width: 250, 
             height: 250 
         });
