@@ -6,22 +6,31 @@
     <title>Терминал кассира</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --accent: #3498db; --bg: #f8f9fa; --text: #212529; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        .container { padding: 20px; padding-bottom: 80px; }
-        .header { background: white; padding: 30px 20px; border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; }
-        .shop-name { font-size: 24px; font-weight: 800; margin: 0; }
+        :root { --accent: #3498db; --bg: #0f1216; --glass: rgba(255, 255, 255, 0.05); }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; padding-bottom: 70px;}
+        .header { padding: 30px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .shop-name { font-size: 24px; font-weight: 800; margin: 0; color: #fff; }
         .seller-fio { opacity: 0.5; font-size: 14px; margin-top: 5px; }
         
-        .card { background: white; border-radius: 24px; padding: 25px; margin-top: 20px; box-shadow: 0 2px 15px rgba(0,0,0,0.03); }
-        .scan-btn { background: var(--accent); color: white; border: none; width: 100%; padding: 20px; border-radius: 20px; font-size: 18px; font-weight: bold; margin-top: 40px; cursor: pointer; }
+        .container { padding: 20px; }
+        .card { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 25px; margin-top: 20px; }
+        .scan-btn { background: #3498db; color: white; border: none; width: 100%; padding: 20px; border-radius: 20px; font-size: 18px; font-weight: bold; margin-top: 20px; cursor: pointer; }
         
-        #clientSection { display: none; }
+        /* Профиль клиента */
+        #clientSection { display: none; text-align: center; }
         .btn-row { display: flex; gap: 12px; margin-top: 25px; }
-        .act-btn { flex: 1; padding: 18px; border: none; border-radius: 16px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .act-btn { flex: 1; padding: 18px; border: none; border-radius: 16px; color: black; font-weight: bold; font-size: 16px; cursor: pointer; }
         
-        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; padding: 15px 0; }
-        .nav-item { flex: 1; text-align: center; font-size: 14px; opacity: 0.4; border: none; background: none; font-weight: bold; cursor: pointer; }
+        /* История */
+        #historySection { display: none; }
+        .hist-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .hist-val { font-weight: bold; font-size: 18px; }
+        .earn { color: #2ecc71; }
+        .spend { color: #e74c3c; }
+        
+        /* Навигация */
+        .nav { position: fixed; bottom: 0; width: 100%; background: #0f1216; display: flex; border-top: 1px solid rgba(255,255,255,0.1); padding: 15px 0; }
+        .nav-item { flex: 1; text-align: center; font-size: 14px; opacity: 0.4; border: none; background: none; color: white; font-weight: bold; cursor: pointer; }
         .nav-item.active { opacity: 1; color: var(--accent); }
     </style>
 </head>
@@ -31,36 +40,74 @@
         <p class="seller-fio" id="seller_display">Кассир</p>
     </div>
 
-    <div class="container" id="main_screen">
+    <div class="container" id="scanTab">
         <button class="scan-btn" onclick="scanQR()">📸 СКАНЕР QR-КОДА</button>
         
         <div id="clientSection" class="card">
-            <h3 id="c_fio" style="margin: 0; font-size: 22px;">ФИО Клиента</h3>
+            <h3 id="c_fio" style="margin: 0; font-size: 22px;">ФИО</h3>
             <p style="opacity: 0.5; font-size: 12px; margin-top: 5px;">ID: <span id="c_id">000000</span></p>
             <div style="font-size: 48px; font-weight: 800; color: #2ecc71; margin: 15px 0;" id="c_bonus">0</div>
             <p style="margin: 0; opacity: 0.6">доступных бонусов</p>
             
             <div class="btn-row">
                 <button class="act-btn" style="background: #2ecc71;" onclick="doAction('earn')">Начислить</button>
-                <button class="act-btn" style="background: #e74c3c;" onclick="doAction('spend')">Списать</button>
+                <button class="act-btn" style="background: #e74c3c; color: white;" onclick="doAction('spend')">Списать</button>
             </div>
-            <button onclick="location.reload()" style="background:none; border:none; margin-top: 20px; color: #888; width: 100%; font-weight: bold; cursor: pointer;">Отмена</button>
+            <button onclick="location.reload()" style="background:none; border:none; margin-top: 20px; color: #888; width: 100%; font-weight: bold;">Отмена</button>
+        </div>
+    </div>
+
+    <div class="container" id="historyTab" style="display: none;">
+        <h2 style="margin-top:0;">Последние операции</h2>
+        <div class="card" id="historyList" style="padding: 10px 20px;">
+            <p style="opacity:0.5; text-align:center;">Нет данных</p>
         </div>
     </div>
 
     <div class="nav">
-        <button class="nav-item active" onclick="location.reload()">🏠 Главная</button>
-        <button class="nav-item" onclick="tg.sendData(JSON.stringify({action:'history'}))">📜 История</button>
+        <button class="nav-item active" id="btnScan" onclick="switchTab('scan')">📷 Скан</button>
+        <button class="nav-item" id="btnHist" onclick="switchTab('history')">📜 История</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.backgroundColor = '#0f1216';
+        tg.headerColor = '#0f1216';
+
         const p = new URLSearchParams(window.location.search);
         document.getElementById('shop_display').innerText = p.get('shop') || 'Магазин';
         document.getElementById('seller_display').innerText = p.get('name') || 'Продавец';
 
+        // Загрузка Истории
+        const h_str = p.get('h');
+        if (h_str) {
+            try {
+                const history = JSON.parse(h_str);
+                let html = '';
+                history.forEach(item => {
+                    const isEarn = item.t === 'earn';
+                    html += `
+                    <div class="hist-item">
+                        <div>
+                            <div style="font-size:14px">${item.c}</div>
+                            <div style="font-size:12px; opacity:0.5">${item.d}</div>
+                        </div>
+                        <div class="hist-val ${isEarn ? 'earn' : 'spend'}">${isEarn ? '+' : '-'}${item.a}</div>
+                    </div>`;
+                });
+                if(html) document.getElementById('historyList').innerHTML = html;
+            } catch(e){}
+        }
+
         let currentCID = "";
+
+        function switchTab(tab) {
+            document.getElementById('scanTab').style.display = tab === 'scan' ? 'block' : 'none';
+            document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
+            document.getElementById('btnScan').classList.toggle('active', tab === 'scan');
+            document.getElementById('btnHist').classList.toggle('active', tab === 'history');
+        }
 
         function scanQR() {
             tg.showScanQrPopup({ text: "Наведите на код клиента" }, function(text) {
@@ -79,11 +126,12 @@
         }
 
         function doAction(type) {
-            let amount = prompt(type === 'earn' ? "Введите полную сумму чека для начисления:" : "Введите полную сумму чека (бот сам спишет до 70%):");
+            let amount = prompt(type === 'earn' ? "Введите сумму чека:" : "Полная сумма чека (бот сам спишет до 70%):");
             if (amount && !isNaN(amount)) {
                 tg.sendData(JSON.stringify({ action: type, cid: currentCID, amount: amount }));
             }
         }
     </script>
 </body>
+</html>
 </html>
