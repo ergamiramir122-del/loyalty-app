@@ -16,19 +16,16 @@
         .card { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 25px; margin-top: 20px; }
         .scan-btn { background: #3498db; color: white; border: none; width: 100%; padding: 20px; border-radius: 20px; font-size: 18px; font-weight: bold; margin-top: 20px; cursor: pointer; }
         
-        /* Профиль клиента */
         #clientSection { display: none; text-align: center; }
         .btn-row { display: flex; gap: 12px; margin-top: 25px; }
         .act-btn { flex: 1; padding: 18px; border: none; border-radius: 16px; color: black; font-weight: bold; font-size: 16px; cursor: pointer; }
         
-        /* История */
         #historySection { display: none; }
         .hist-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .hist-val { font-weight: bold; font-size: 18px; }
         .earn { color: #2ecc71; }
         .spend { color: #e74c3c; }
         
-        /* Навигация */
         .nav { position: fixed; bottom: 0; width: 100%; background: #0f1216; display: flex; border-top: 1px solid rgba(255,255,255,0.1); padding: 15px 0; }
         .nav-item { flex: 1; text-align: center; font-size: 14px; opacity: 0.4; border: none; background: none; color: white; font-weight: bold; cursor: pointer; }
         .nav-item.active { opacity: 1; color: var(--accent); }
@@ -79,7 +76,6 @@
         document.getElementById('shop_display').innerText = p.get('shop') || 'Магазин';
         document.getElementById('seller_display').innerText = p.get('name') || 'Продавец';
 
-        // Загрузка Истории
         const h_str = p.get('h');
         if (h_str) {
             try {
@@ -112,7 +108,10 @@
         function scanQR() {
             tg.showScanQrPopup({ text: "Наведите на код клиента" }, function(text) {
                 try {
-                    const data = text.split(':');
+                    // МАГИЯ ЗДЕСЬ: Расшифровываем текст обратно в русские буквы
+                    const decodedText = decodeURIComponent(text);
+                    const data = decodedText.split(':');
+                    
                     currentCID = data[0];
                     document.getElementById('c_id').innerText = data[0];
                     document.getElementById('c_fio').innerText = data[1];
@@ -133,5 +132,4 @@
         }
     </script>
 </body>
-</html>
 </html>
