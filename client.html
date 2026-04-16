@@ -18,8 +18,7 @@
         .btn-main { background: var(--accent); color: black; border: none; width: 100%; padding: 18px; border-radius: 18px; font-size: 18px; font-weight: bold; margin-top: 20px; cursor: pointer; }
         
         #qrModal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
-        /* Задаем жесткие размеры для блока, чтобы библиотека не сходила с ума */
-        #qrcode { background: white; padding: 15px; border-radius: 20px; min-width: 220px; min-height: 220px; display: flex; align-items: center; justify-content: center; }
+        #qrcode { background: white; padding: 15px; border-radius: 20px; }
     </style>
 </head>
 <body>
@@ -70,32 +69,17 @@
         document.getElementById('next_rank').innerText = `До следующего уровня: ${Math.max(0, next-spent).toLocaleString()} тг`;
 
         const qrData = `${cid}:${fio}:${Math.floor(bonuses)}:${spent}:${rank}`;
-        let qrGenerated = false;
 
-        function openQR() {
-            // Сначала показываем окно
-            document.getElementById('qrModal').style.display = 'flex';
-            
-            // Если QR еще не создан, даем браузеру 100мс на отрисовку окна, и только потом генерируем код
-            if (!qrGenerated) {
-                setTimeout(() => {
-                    document.getElementById("qrcode").innerHTML = ""; // Очищаем на всякий случай
-                    new QRCode(document.getElementById("qrcode"), { 
-                        text: qrData, 
-                        width: 220, 
-                        height: 220, 
-                        colorDark: "#000000", 
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                    qrGenerated = true;
-                }, 100);
-            }
-        }
+        // ВОТ ОНО! Генерируем сразу при загрузке страницы, как было в самом начале.
+        // Без if'ов, задержек и прочего мусора.
+        new QRCode(document.getElementById("qrcode"), { 
+            text: qrData, 
+            width: 250, 
+            height: 250 
+        });
 
-        function closeQR() { 
-            document.getElementById('qrModal').style.display = 'none'; 
-        }
+        function openQR() { document.getElementById('qrModal').style.display = 'flex'; }
+        function closeQR() { document.getElementById('qrModal').style.display = 'none'; }
     </script>
 </body>
 </html>
