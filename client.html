@@ -2,72 +2,88 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loyalty Client</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: var(--tg-theme-bg-color, #f5f5f5); color: var(--tg-theme-text-color, #222); margin: 0; padding: 20px; text-align: center; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .rank-tag { padding: 5px 15px; border-radius: 20px; font-weight: bold; background: #ffd700; color: #000; font-size: 14px; }
-        .progress-container { background: #e0e0e0; height: 8px; border-radius: 4px; width: 100%; margin: 10px 0; }
-        .progress-bar { background: #ffd700; height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s; }
-        .bonus-main { font-size: 64px; font-weight: 800; margin: 30px 0 10px; color: #2ecc71; }
-        .expire-text { color: #888; font-size: 14px; margin-bottom: 40px; }
-        .btn-qr { background: var(--tg-theme-button-color, #0088cc); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 16px; width: 100%; font-weight: 600; }
+        :root { --accent: #2ecc71; --gold: #f1c40f; --bg: #0f1216; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: white; margin: 0; overflow: hidden; }
+        .app-container { padding: 20px; display: flex; flex-direction: column; align-items: center; height: 100vh; }
         
-        #qrOverlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); flex-direction: column; align-items: center; justify-content: center; }
-        #qrcode { background: white; padding: 20px; border-radius: 15px; }
+        /* Glassmorphism Card */
+        .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; width: 100%; padding: 20px; box-sizing: border-box; }
+        
+        .header { display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 30px; }
+        .rank-badge { background: var(--gold); color: black; padding: 6px 16px; border-radius: 50px; font-weight: 800; font-size: 14px; text-transform: uppercase; }
+        .qr-btn { background: rgba(255,255,255,0.1); border: none; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        .progress-section { width: 100%; margin-bottom: 40px; }
+        .bar-bg { background: rgba(255,255,255,0.1); height: 8px; border-radius: 10px; margin-bottom: 8px; }
+        .bar-fill { background: linear-gradient(90deg, #f1c40f, #f39c12); height: 100%; border-radius: 10px; transition: width 1s ease; }
+        
+        .balance-label { color: rgba(255,255,255,0.5); font-size: 14px; margin-bottom: 5px; }
+        .balance-value { font-size: 72px; font-weight: 800; letter-spacing: -2px; text-shadow: 0 0 30px rgba(46, 204, 113, 0.3); color: var(--accent); }
+        
+        #qrModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        #qrcode { background: white; padding: 20px; border-radius: 20px; margin-bottom: 30px; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div id="rank_name" class="rank-tag">BRONZE</div>
-        <button onclick="showQR()" style="background:none; border:none; font-size: 24px;">🖼</button>
+    <div class="app-container">
+        <div class="header">
+            <div id="rankBadge" class="rank-badge">BRONZE</div>
+            <button class="qr-btn" onclick="openQR()">📷</button>
+        </div>
+
+        <div class="progress-section">
+            <div class="bar-bg"><div id="barFill" class="bar-fill" style="width: 0%"></div></div>
+            <div id="nextRankText" style="font-size: 12px; color: rgba(255,255,255,0.5)">Загрузка...</div>
+        </div>
+
+        <div class="balance-label">Доступные бонусы</div>
+        <div class="balance-value" id="balanceVal">0</div>
+        
+        <div style="margin-top: auto; color: rgba(255,255,255,0.3); font-size: 12px; padding-bottom: 20px;">
+            Дата сгорания: <span id="expireDate">не запланировано</span>
+        </div>
     </div>
-    <div class="progress-container"><div id="rank_progress" class="progress-bar"></div></div>
-    <div id="next_rank_text" style="font-size: 12px; color: #888; text-align: left;">До следующего ранга: 0</div>
 
-    <div class="bonus-main" id="bonus_val">0</div>
-    <div class="expire-text">Сгорание: <span id="expire_val">не запланировано</span></div>
-
-    <button class="btn-qr" onclick="showQR()">Показать QR-код</button>
-
-    <div id="qrOverlay" onclick="hideQR()">
+    <div id="qrModal" onclick="closeQR()">
         <div id="qrcode"></div>
-        <p style="color: white; margin-top: 20px;">Покажите этот код продавцу</p>
+        <div style="font-weight: bold;">ВАШ ID: <span id="idDisplay">000000</span></div>
+        <p style="opacity: 0.5;">Нажмите в любое место, чтобы закрыть</p>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.backgroundColor = '#0f1216';
+        tg.headerColor = '#0f1216';
 
-        // Читаем параметры из URL (их пришлет бот)
-        const params = new URLSearchParams(window.location.search);
-        const bonuses = params.get('bonuses') || '0';
-        const rank = params.get('rank') || 'BRONZE';
-        const spent = parseFloat(params.get('spent') || '0');
-        const cid = params.get('cid') || '000000';
+        const p = new URLSearchParams(window.location.search);
+        const bonuses = p.get('bonuses') || '0';
+        const spent = parseFloat(p.get('spent') || '0');
+        const cid = p.get('cid') || '000000';
+        const rank = p.get('rank') || 'BRONZE';
 
-        // Заполняем данные
-        document.getElementById('bonus_val').innerText = bonuses;
-        document.getElementById('rank_name').innerText = rank;
-        
-        // Логика шкалы (по твоим порогам 400к, 800к, 1.2м)
+        document.getElementById('balanceVal').innerText = Math.floor(bonuses);
+        document.getElementById('idDisplay').innerText = cid;
+        document.getElementById('rankBadge').innerText = rank;
+
+        // Пороги: 400к, 800к, 1.2м
         let next = 400000;
         if (spent >= 1200000) next = 1200000;
         else if (spent >= 800000) next = 1200000;
         else if (spent >= 400000) next = 800000;
 
-        let progress = (spent / next) * 100;
-        document.getElementById('rank_progress').style.width = Math.min(progress, 100) + "%";
-        document.getElementById('next_rank_text').innerText = `До следующего ранга: ${Math.max(0, next - spent)} тг`;
+        const progress = Math.min((spent / next) * 100, 100);
+        document.getElementById('barFill').style.width = progress + '%';
+        document.getElementById('nextRankText').innerText = `До следующего уровня: ${Math.max(0, next - spent).toLocaleString()} тг`;
 
-        // Генерация QR
-        new QRCode(document.getElementById("qrcode"), { text: cid, width: 220, height: 220 });
-
-        function showQR() { document.getElementById('qrOverlay').style.display = 'flex'; }
-        function hideQR() { document.getElementById('qrOverlay').style.display = 'none'; }
+        new QRCode(document.getElementById("qrcode"), { text: cid, width: 200, height: 200 });
+        function openQR() { document.getElementById('qrModal').style.display = 'flex'; }
+        function closeQR() { document.getElementById('qrModal').style.display = 'none'; }
     </script>
 </body>
+</html>
 </html>
