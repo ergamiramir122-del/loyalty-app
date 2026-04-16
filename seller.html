@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Терминал кассира</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --accent: #3498db; --bg: #f8f9fa; --text: #212529; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { padding: 20px; padding-bottom: 80px; }
         .header { background: white; padding: 30px 20px; border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; }
         .shop-name { font-size: 24px; font-weight: 800; margin: 0; }
-        .seller-fio { opacity: 0.5; font-size: 14px; }
+        .seller-fio { opacity: 0.5; font-size: 14px; margin-top: 5px; }
         
         .card { background: white; border-radius: 24px; padding: 25px; margin-top: 20px; box-shadow: 0 2px 15px rgba(0,0,0,0.03); }
-        .scan-btn { background: var(--accent); color: white; border: none; width: 100%; padding: 20px; border-radius: 20px; font-size: 18px; font-weight: bold; margin-top: 40px; }
+        .scan-btn { background: var(--accent); color: white; border: none; width: 100%; padding: 20px; border-radius: 20px; font-size: 18px; font-weight: bold; margin-top: 40px; cursor: pointer; }
         
         #clientSection { display: none; }
         .btn-row { display: flex; gap: 12px; margin-top: 25px; }
-        .act-btn { flex: 1; padding: 18px; border: none; border-radius: 16px; color: white; font-weight: bold; font-size: 16px; }
+        .act-btn { flex: 1; padding: 18px; border: none; border-radius: 16px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
         
         .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #eee; padding: 15px 0; }
-        .nav-item { flex: 1; text-align: center; font-size: 12px; opacity: 0.4; border: none; background: none; }
+        .nav-item { flex: 1; text-align: center; font-size: 14px; opacity: 0.4; border: none; background: none; font-weight: bold; cursor: pointer; }
         .nav-item.active { opacity: 1; color: var(--accent); }
     </style>
 </head>
@@ -34,8 +35,8 @@
         <button class="scan-btn" onclick="scanQR()">📸 СКАНЕР QR-КОДА</button>
         
         <div id="clientSection" class="card">
-            <h3 id="c_fio" style="margin: 0">ФИО Клиента</h3>
-            <p style="opacity: 0.5; font-size: 12px;">ID: <span id="c_id">000000</span></p>
+            <h3 id="c_fio" style="margin: 0; font-size: 22px;">ФИО Клиента</h3>
+            <p style="opacity: 0.5; font-size: 12px; margin-top: 5px;">ID: <span id="c_id">000000</span></p>
             <div style="font-size: 48px; font-weight: 800; color: #2ecc71; margin: 15px 0;" id="c_bonus">0</div>
             <p style="margin: 0; opacity: 0.6">доступных бонусов</p>
             
@@ -43,13 +44,12 @@
                 <button class="act-btn" style="background: #2ecc71;" onclick="doAction('earn')">Начислить</button>
                 <button class="act-btn" style="background: #e74c3c;" onclick="doAction('spend')">Списать</button>
             </div>
-            <button onclick="location.reload()" style="background:none; border:none; margin-top: 20px; color: #888; width: 100%;">Отмена</button>
+            <button onclick="location.reload()" style="background:none; border:none; margin-top: 20px; color: #888; width: 100%; font-weight: bold; cursor: pointer;">Отмена</button>
         </div>
     </div>
 
     <div class="nav">
-        <button class="nav-item active">🏠 Главная</button>
-        <button class="nav-item" onclick="scanQR()">📷 Скан</button>
+        <button class="nav-item active" onclick="location.reload()">🏠 Главная</button>
         <button class="nav-item" onclick="tg.sendData(JSON.stringify({action:'history'}))">📜 История</button>
     </div>
 
@@ -65,7 +65,6 @@
         function scanQR() {
             tg.showScanQrPopup({ text: "Наведите на код клиента" }, function(text) {
                 try {
-                    // Разбираем строку из QR-кода клиента
                     const data = text.split(':');
                     currentCID = data[0];
                     document.getElementById('c_id').innerText = data[0];
@@ -74,18 +73,17 @@
                     
                     document.querySelector('.scan-btn').style.display = 'none';
                     document.getElementById('clientSection').style.display = 'block';
-                } catch(e) { tg.showAlert("Ошибка: неверный код!"); }
+                } catch(e) { tg.showAlert("Ошибка чтения QR-кода"); }
                 return true;
             });
         }
 
         function doAction(type) {
-            let amount = prompt(type === 'earn' ? "Введите сумму чека:" : "Введите сумму для списания:");
+            let amount = prompt(type === 'earn' ? "Введите полную сумму чека для начисления:" : "Введите полную сумму чека (бот сам спишет до 70%):");
             if (amount && !isNaN(amount)) {
                 tg.sendData(JSON.stringify({ action: type, cid: currentCID, amount: amount }));
             }
         }
     </script>
 </body>
-</html>
 </html>
