@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loyalty Client</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: var(--tg-theme-bg-color, #f5f5f5); color: var(--tg-theme-text-color, #222); margin: 0; padding: 20px; text-align: center; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .rank-tag { padding: 5px 15px; border-radius: 20px; font-weight: bold; background: #ffd700; color: #000; font-size: 14px; }
+        .progress-container { background: #e0e0e0; height: 8px; border-radius: 4px; width: 100%; margin: 10px 0; }
+        .progress-bar { background: #ffd700; height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s; }
+        .bonus-main { font-size: 64px; font-weight: 800; margin: 30px 0 10px; color: #2ecc71; }
+        .expire-text { color: #888; font-size: 14px; margin-bottom: 40px; }
+        .btn-qr { background: var(--tg-theme-button-color, #0088cc); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 16px; width: 100%; font-weight: 600; }
+        
+        #qrOverlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); flex-direction: column; align-items: center; justify-content: center; }
+        #qrcode { background: white; padding: 20px; border-radius: 15px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div id="rank_name" class="rank-tag">BRONZE</div>
+        <button onclick="showQR()" style="background:none; border:none; font-size: 24px;">🖼</button>
+    </div>
+    <div class="progress-container"><div id="rank_progress" class="progress-bar"></div></div>
+    <div id="next_rank_text" style="font-size: 12px; color: #888; text-align: left;">До следующего ранга: 0</div>
+
+    <div class="bonus-main" id="bonus_val">0</div>
+    <div class="expire-text">Сгорание: <span id="expire_val">не запланировано</span></div>
+
+    <button class="btn-qr" onclick="showQR()">Показать QR-код</button>
+
+    <div id="qrOverlay" onclick="hideQR()">
+        <div id="qrcode"></div>
+        <p style="color: white; margin-top: 20px;">Покажите этот код продавцу</p>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Читаем параметры из URL (их пришлет бот)
+        const params = new URLSearchParams(window.location.search);
+        const bonuses = params.get('bonuses') || '0';
+        const rank = params.get('rank') || 'BRONZE';
+        const spent = parseFloat(params.get('spent') || '0');
+        const cid = params.get('cid') || '000000';
+
+        // Заполняем данные
+        document.getElementById('bonus_val').innerText = bonuses;
+        document.getElementById('rank_name').innerText = rank;
+        
+        // Логика шкалы (по твоим порогам 400к, 800к, 1.2м)
+        let next = 400000;
+        if (spent >= 1200000) next = 1200000;
+        else if (spent >= 800000) next = 1200000;
+        else if (spent >= 400000) next = 800000;
+
+        let progress = (spent / next) * 100;
+        document.getElementById('rank_progress').style.width = Math.min(progress, 100) + "%";
+        document.getElementById('next_rank_text').innerText = `До следующего ранга: ${Math.max(0, next - spent)} тг`;
+
+        // Генерация QR
+        new QRCode(document.getElementById("qrcode"), { text: cid, width: 220, height: 220 });
+
+        function showQR() { document.getElementById('qrOverlay').style.display = 'flex'; }
+        function hideQR() { document.getElementById('qrOverlay').style.display = 'none'; }
+    </script>
+</body>
+</html>
