@@ -16,6 +16,7 @@
         .progress-bar { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; overflow: hidden; margin: 15px 0; }
         .fill { background: var(--gold); height: 100%; transition: width 1s; }
         .btn-main { background: var(--accent); color: black; border: none; width: 100%; padding: 18px; border-radius: 18px; font-size: 18px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        
         #qrModal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
         #qrcode { background: white; padding: 15px; border-radius: 20px; }
     </style>
@@ -23,7 +24,7 @@
 <body>
     <div class="header">
         <div id="rank" class="rank-badge">BRONZE</div>
-        <div style="opacity: 0.5" id="fio_display">Загрузка...</div>
+        <div style="opacity: 0.5; font-size: 14px;" id="fio_display">Загрузка...</div>
     </div>
 
     <div class="card">
@@ -45,6 +46,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.backgroundColor = '#0f1216';
+        tg.headerColor = '#0f1216';
 
         const p = new URLSearchParams(window.location.search);
         const cid = p.get('cid') || '000000';
@@ -58,7 +60,6 @@
         document.getElementById('fio_display').innerText = fio;
         document.getElementById('id_display').innerText = cid;
 
-        // Пороги рангов
         let next = 400000;
         if (spent >= 1200000) next = 1200000;
         else if (spent >= 800000) next = 1200000;
@@ -67,12 +68,20 @@
         document.getElementById('fill').style.width = Math.min((spent/next)*100, 100) + '%';
         document.getElementById('next_rank').innerText = `До следующего уровня: ${Math.max(0, next-spent).toLocaleString()} тг`;
 
-        // Упаковываем все данные в QR-код через двоеточие
         const qrData = `${cid}:${fio}:${Math.floor(bonuses)}:${spent}:${rank}`;
-        new QRCode(document.getElementById("qrcode"), { text: qrData, width: 250, height: 250 });
-
-        function openQR() { document.getElementById('qrModal').style.display = 'flex'; }
+        
+        let qrGenerated = false;
+        function openQR() {
+            document.getElementById('qrModal').style.display = 'flex';
+            if (!qrGenerated) {
+                new QRCode(document.getElementById("qrcode"), { 
+                    text: qrData, width: 220, height: 220, colorDark: "#000000", colorLight: "#ffffff" 
+                });
+                qrGenerated = true;
+            }
+        }
         function closeQR() { document.getElementById('qrModal').style.display = 'none'; }
     </script>
 </body>
+</html>
 </html>
